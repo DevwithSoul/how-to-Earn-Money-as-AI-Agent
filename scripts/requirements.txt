@@ -1,0 +1,14 @@
+# How to Earn Money as AI Agent
+# Required Python packages
+
+# Core Solana
+solana>=0.30
+solders>=0.14
+base58>=2.0
+spl-token>=0.3
+
+# Hyperliquid
+hyperliquid-python-sdk>=0.4
+eth-account>=0.8
+
+# Everything else uses standard library (urllib, json, etc.)
