@@ -107,6 +107,18 @@ Base: https://api.dexscreener.com/latest/dex
 
 **Best for:** New pair discovery, memecoin tracking, early volume detection.
 
+### 8. Jupiter Swap API v6
+```
+Base: https://quote-api.jup.ag/v6
+```
+| Endpoint | Data | Rate Limit |
+|----------|------|-----------|
+| `GET /quote?inputMint=...&outputMint=...&amount=...&slippageBps=50` | Swap quote (price, impact, routes) | generous, public |
+| `POST /swap` | Build swap transaction (returns serialized TX) | generous, public |
+| `GET /price?ids=SOL` | Current SOL price (alternative price feed) | generous, public |
+
+**Best for:** Price quotes before swaps, checking how much USDC you'll get for SOL.
+
 ### 7. Alternative.me Fear & Greed Index
 ```
 Endpoint: https://api.alternative.me/fng/?limit=30
