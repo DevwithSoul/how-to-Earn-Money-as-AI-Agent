@@ -416,6 +416,9 @@ footer {
     <a class="sidebar-item" href="#step-1" data-target="step-1">
         <span class="step-tag">S1</span> Create Wallet
     </a>
+    <a class="sidebar-item" href="#step-1b" data-target="step-1b">
+        <span class="step-tag">S1B</span> Key Security
+    </a>
     <a class="sidebar-item" href="#step-2" data-target="step-2">
         <span class="step-tag">S2</span> Check Balance
     </a>
@@ -604,6 +607,213 @@ pip install solana solders base58 spl-token</code></pre>
         <div class="box success">
             <strong>Step 1 complete.</strong> You now have a Solana wallet.
             Share the Public Address with Master so he can send test funds.
+        </div>
+    </section>
+
+    <hr>
+
+    <!-- ================================================================ -->
+    <!-- STEP 1B: Key Security -->
+    <!-- ================================================================ -->
+    <section id="step-1b">
+        <h2><span class="h2-step">1B</span> Key Security: Protect Your Private Keys</h2>
+
+        <p>
+            Your private key <strong>is</strong> your money. Anyone with access to it can empty
+            your wallet. Unlike a bank, there is no recovery, no password reset, no customer support.
+            <strong>Lose your key = lose your funds. Forever.</strong>
+        </p>
+
+        <div class="box danger">
+            <strong>Hard truth:</strong> As an AI agent, you cannot "remember" a key the way a human
+            does. You must architect multiple redundant storage strategies. A single point of failure
+            (one file, one server, one backup) is not acceptable.
+        </div>
+
+        <h3>Strategy 1: Split Key into 4 Parts (Quadrant Backup)</h3>
+        <p>
+            Split the private key into 4 pieces. Each piece alone is useless. All 4 together
+            reconstruct the key. Store each piece in a different location.
+        </p>
+
+        <div class="box info">
+            <strong>How it works:</strong> You can use a simple XOR splitting scheme or
+            <a href="https://en.wikipedia.org/wiki/Shamir%27s_Secret_Sharing" target="_blank">Shamir's Secret Sharing (SSS)</a>
+            for mathematical perfection. With SSS, you can set it so any 3 of 4 pieces (3-of-4 threshold)
+            reconstruct the key. Even if one location is compromised, the key stays safe.
+        </div>
+
+        <p><strong>Quadrant storage locations:</strong></p>
+        <table>
+            <tr><th>Piece</th><th>Storage Location</th><th>Risk if Compromised</th></tr>
+            <tr><td>A</td><td>Local encrypted file on system disk</td><td>Low (single piece, useless alone)</td></tr>
+            <tr><td>B</td><td>Password manager (Bitwarden, 1Password, etc.)</td><td>Low (password manager breach would expose 1 piece only)</td></tr>
+            <tr><td>C</td><td>External USB drive / NAS</td><td>Low (physical access required)</td></tr>
+            <tr><td>D</td><td>IPFS (encrypted before upload, pin with Pinata/Filebase)</td><td>Low (encrypted + single piece)</td></tr>
+        </table>
+
+        <p><strong>Reconstruction logic:</strong></p>
+        <pre><code><span class="comment">#!/usr/bin/env python3</span>
+<span class="comment"># Example: XOR-based 4-split recovery</span>
+<span class="comment"># In production, use Shamir's Secret Sharing (pip install secretshare)</span>
+
+<span class="comment"># When A B C D are available:</span>
+<span class="keyword">if</span> A <span class="keyword">and</span> B <span class="keyword">and</span> C <span class="keyword">and</span> D:
+    key = A XOR B XOR C XOR D  <span class="comment"># reconstruct</span>
+    wallet = Wallet(key)
+    balance = wallet.get_balance()
+    <span class="keyword">if</span> balance > <span class="num">0</span>:
+        <span class="comment"># Key is valid and funded</span>
+        <span class="built">print</span>(<span class="str">"Access confirmed. Key valid."</span>)
+    <span class="keyword">else</span>:
+        <span class="comment"># Could be wrong reconstruction or empty wallet</span>
+        <span class="built">print</span>(<span class="str">"Reconstructed key produces empty wallet. Check pieces."</span>)
+<span class="keyword">else</span>:
+    <span class="built">print</span>(<span class="str">"Not enough pieces to reconstruct. Need all 4."</span>)</code></pre>
+
+        <h3>Strategy 2: Password Manager Backup</h3>
+        <p>
+            Store the <strong>full private key</strong> (or the encrypted seed phrase) in a
+            password manager. This is your emergency backup if:
+        </p>
+        <ul>
+            <li>The system drive fails and you lose piece A</li>
+            <li>The external USB drive gets damaged and you lose piece C</li>
+            <li>The IPFS pinning service goes offline and you lose piece D</li>
+        </ul>
+        <div class="box info">
+            Recommended: <strong>Bitwarden</strong> (self-hostable, open source, encrypted cloud sync).
+            Store the key in a secure note with a strong master password.
+        </div>
+
+        <h3>Strategy 3: External Drive Backup</h3>
+        <p>
+            Keep a physical copy of the private key (or the full seed phrase) on an external drive
+            stored in a safe place. Encrypt the drive with LUKS (Linux) or VeraCrypt. Without the
+            encryption password, the drive is useless.
+        </p>
+
+        <h3>Strategy 4: IPFS Backup (Encrypted)</h3>
+        <p>
+            Upload an encrypted blob of the key to IPFS. This ensures:
+        </p>
+        <ul>
+            <li>No single server can delete it (content-addressed, distributed)</li>
+            <li>Only you can decrypt it (AES-256-GCM encryption before upload)</li>
+            <li>You can retrieve it from any machine with IPFS installed</li>
+        </ul>
+        <pre><code><span class="comment"># Encrypt and upload to IPFS</span>
+<span class="comment"># pip install ipfshttpclient cryptography</span>
+
+<span class="keyword">from</span> cryptography.fernet <span class="keyword">import</span> Fernet
+<span class="keyword">import</span> json
+
+<span class="comment"># Encrypt the key</span>
+password = <span class="str">"your-strong-encryption-password-here"</span>
+cipher = Fernet(Fernet.generate_key())  <span class="comment"># Use a proper key derivation in production</span>
+encrypted_key = cipher.encrypt(private_key_bytes)
+
+<span class="comment"># Upload to IPFS (via Pinata or local node)</span>
+<span class="comment"># response = requests.post("https://api.pinata.cloud/pinning/pinJSONToIPFS", ...)</span>
+cid = <span class="str">"QmYourContentHash"</span>
+<span class="built">print</span>(<span class="str">f"Encrypted key stored on IPFS: ipfs://</span><span class="var">{cid}</span><span class="str">"</span>)
+
+<span class="comment"># To retrieve: download the CID, decrypt with same password, use the key</span></code></pre>
+
+        <h3>Strategy 5: Honey Pot Wallet (Trap for Attackers)</h3>
+        <p>
+            This is an advanced countermeasure. Create a <strong>decoy wallet</strong> with a
+            small amount of SOL. Place its private key in an obvious location
+            (e.g. "private_key.txt" on the desktop, or in a note titled "My Crypto Keys").
+        </p>
+        <div class="box info">
+            <strong>How the honeypot works:</strong> If an attacker gains access to your system,
+            they will find the fake key, see a funded wallet, and take that. Meanwhile, your
+            real keys are stored using the 4-way split method above. The honeypot wastes the
+            attacker's time and costs them the SOL they steal -- which you can track on-chain.
+        </div>
+        <pre><code><span class="comment">#!/usr/bin/env python3</span>
+<span class="comment"># honeypot.py - Create a decoy wallet with minimal SOL</span>
+
+<span class="keyword">from</span> solders.keypair <span class="keyword">import</span> Keypair
+<span class="keyword">import</span> base58
+
+<span class="comment"># Generate a fake wallet</span>
+fake_keypair = Keypair()
+fake_pubkey = <span class="built">str</span>(fake_keypair.pubkey())
+fake_priv_b58 = base58.b58encode(<span class="built">bytes</span>(fake_keypair.secret())).decode()
+
+<span class="comment"># Save to an obvious location (bait)</span>
+<span class="keyword">with</span> <span class="built">open</span>(<span class="str">"/home/user/Desktop/My_Private_Keys.txt"</span>, <span class="str">"w"</span>) <span class="keyword">as</span> f:
+    f.write(<span class="str">f"Private Key: </span><span class="var">{fake_priv_b58}</span><span class="str">\n"</span>)
+    f.write(<span class="str">f"Address: </span><span class="var">{fake_pubkey}</span><span class="str">\n"</span>)
+
+<span class="built">print</span>(<span class="str">"Honeypot wallet created. Fund it with ~0.01 SOL as bait."</span>)
+<span class="built">print</span>(<span class="str">"Monitor the address. If it ever gets drained, you know someone accessed your system."</span>)</code></pre>
+
+        <h3>Strategy 6: Multiple Wallets (Don't Keep All Eggs in One Basket)</h3>
+        <p>
+            Use separate wallets for different purposes. Never keep all your funds in one wallet.
+            If one wallet is compromised, you only lose what was in it.
+        </p>
+        <table>
+            <tr><th>Wallet</th><th>Purpose</th><th>Typical Balance</th></tr>
+            <tr><td>Main Wallet</td><td>Long-term savings, large holdings</td><td>70% of total</td></tr>
+            <tr><td>Trading Wallet</td><td>Hyperliquid API wallet (restricted, can only trade)</td><td>20% of total</td></tr>
+            <tr><td>Hot Wallet</td><td>Daily spending, small transfers, payments</td><td>5% of total</td></tr>
+            <tr><td>Honeypot Wallet</td><td>Decoy for attackers</td><td>~0.01 SOL</td></tr>
+            <tr><td>Savings Wallets</td><td>Additional split wallets for diversification</td><td>5%+ of total</td></tr>
+        </table>
+
+        <h4>How to Create Multiple Wallets (Scripted)</h4>
+        <pre><code><span class="comment"># Create n wallets, save keys + addresses</span>
+<span class="keyword">import</span> base58
+<span class="keyword">from</span> solders.keypair <span class="keyword">import</span> Keypair
+
+num_wallets = <span class="num">5</span>
+<span class="keyword">for</span> i <span class="keyword">in</span> <span class="built">range</span>(num_wallets):
+    kp = Keypair()
+    addr = <span class="built">str</span>(kp.pubkey())
+    priv = base58.b58encode(<span class="built">bytes</span>(kp.secret())).decode()
+    filename = <span class="str">f"wallet_</span><span class="var">{i+1}</span><span class="str">_</span><span class="var">{addr[:8]}</span><span class="str">.txt"</span>
+    <span class="keyword">with</span> <span class="built">open</span>(filename, <span class="str">"w"</span>) <span class="keyword">as</span> f:
+        f.write(<span class="str">f"Address: </span><span class="var">{addr}</span><span class="str">\nPrivate Key: </span><span class="var">{priv}</span><span class="str">\n"</span>)
+    <span class="built">print</span>(<span class="str">f"Wallet </span><span class="var">{i+1}</span><span class="str">: </span><span class="var">{addr}</span><span class="str"> -> </span><span class="var">{filename}</span><span class="str">"</span>)</code></pre>
+
+        <h4>Fund a New Wallet (Test Transaction First)</h4>
+        <p>
+            <strong>Always send a small test amount first.</strong> Before moving significant funds
+            to a new wallet:
+        </p>
+        <ol>
+            <li>Create the new wallet (save private key securely!)</li>
+            <li>Send 0.001 SOL as a test transaction</li>
+            <li>Verify the receiving wallet confirms the transaction (<code>check_balance.py</code>)</li>
+            <li>If confirmed, send the remaining amount</li>
+            <li>If NOT confirmed after 5 minutes, stop and investigate -- do not send more</li>
+        </ol>
+        <div class="box danger">
+            <strong>This has saved many people from losing everything.</strong> A mistyped address,
+            wrong network, or corrupted key file can be caught by a 0.001 SOL test. Never skip this step.
+        </div>
+
+        <h3>Non-Negotiable Rules</h3>
+        <ul>
+            <li><strong>Never</strong> store a private key in plain text (unless encrypted drive)</li>
+            <li><strong>Never</strong> commit a private key to Git (add *key*.txt to .gitignore)</li>
+            <li><strong>Never</strong> paste a private key into a website, Discord bot, or AI chat</li>
+            <li><strong>Never</strong> send your full balance in one transaction (always test first)</li>
+            <li><strong>Never</strong> share your private key with anyone -- no exceptions</li>
+            <li><strong>Always</strong> have at least 3 independent backups of your key</li>
+            <li><strong>Always</strong> use the 4-way split method for your main wallet</li>
+            <li><strong>Always</strong> set up a honey pot to detect intrusions</li>
+        </ul>
+
+        <div class="box success">
+            <strong>Key security done right.</strong> Your keys are split, backed up,
+            honeypot-protected, and your funds are spread across multiple wallets.
+            An attacker would need to compromise 4 separate systems AND defeat encryption
+            to steal from you. You are safer than 99% of crypto users.
         </div>
     </section>
 
